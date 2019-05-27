@@ -14,15 +14,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jmartin82/mmock/pkg/match"
 	"github.com/jmartin82/mmock/internal/proxy"
+	"github.com/jmartin82/mmock/pkg/match"
 
-	"github.com/jmartin82/mmock/internal/statistics"
-	"github.com/jmartin82/mmock/pkg/mock"
-	"github.com/jmartin82/mmock/internal/vars"
 	"net/url"
 	"regexp"
 	"strings"
+
+	"github.com/jmartin82/mmock/internal/statistics"
+	"github.com/jmartin82/mmock/internal/vars"
+	"github.com/jmartin82/mmock/pkg/mock"
 )
 
 //Dispatcher is the mock http server
@@ -155,9 +156,7 @@ func (di *Dispatcher) getMatchingResult(request *mock.Request) (*mock.Definition
 		response = &mock.Response
 	}
 
-	match := &match.Log{Time: time.Now().Unix(), Request: request, Response: response, Result: matchLog}
-
-	return mock, match
+	return mock, match.NewLog(request, response, matchLog)
 
 }
 
@@ -183,7 +182,7 @@ func (di Dispatcher) Start() {
 	err := <-errCh
 
 	if err != nil {
-		log.Fatalf("ListenAndServe: %s" , err.Error())
+		log.Fatalf("ListenAndServe: %s", err.Error())
 	}
 
 }

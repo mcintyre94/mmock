@@ -16,6 +16,7 @@ import (
 	"github.com/jmartin82/mmock/pkg/match"
 		"github.com/jmartin82/mmock/internal/statistics"
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"golang.org/x/net/websocket"
 )
 
@@ -67,6 +68,12 @@ func (di *Dispatcher) Start() {
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
+	//CORS
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		//AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+		AllowMethods: []string{echo.GET, echo.HEAD, echo.PUT, echo.PATCH, echo.POST, echo.DELETE, echo.OPTIONS},
+	}))
 
 	//WS
 	di.clients = []*websocket.Conn{}

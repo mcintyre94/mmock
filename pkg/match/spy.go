@@ -1,8 +1,10 @@
 package match
 
 import (
+	"time"
 
 	"github.com/jmartin82/mmock/pkg/mock"
+	"github.com/twinj/uuid"
 )
 
 //Error contains the tested uri and the match error
@@ -20,12 +22,18 @@ type Result struct {
 
 //Log contains the whole information about the request match. The http request, the final response received and the matching result.
 type Log struct {
+	ID       string         `json:"id"`
 	Time     int64          `json:"time"`
 	Request  *mock.Request  `json:"request"`
 	Response *mock.Response `json:"response"`
 	Result   *Result        `json:"result"`
 }
 
+func NewLog(request *mock.Request, response *mock.Response, result *Result) *Log {
+	t := time.Now().Unix()
+	uuid := uuid.NewV4().String()
+	return &Log{ID: uuid, Time: t, Request: request, Response: response, Result: result}
+}
 
 type Spier interface {
 	Find(mock.Request) []Log
