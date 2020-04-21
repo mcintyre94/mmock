@@ -1,6 +1,7 @@
 package vars
 
 import (
+	"log"
 	"regexp"
 	"strings"
 
@@ -11,6 +12,7 @@ var varsRegex = regexp.MustCompile(`\{\{\s*(.+?)\s*\}\}`)
 
 type Evaluator interface {
 	Eval(req *mock.Request, m *mock.Definition)
+	EvalCallback(req *mock.Request, m *mock.Definition)
 }
 
 type ResponseMessageEvaluator struct {
@@ -33,6 +35,20 @@ func (fp ResponseMessageEvaluator) Eval(req *mock.Request, m *mock.Definition) {
 	fp.walkAndFill(m, vars)
 }
 
+func (fp ResponseMessageEvaluator) EvalCallback(req *mock.Request, m *mock.Definition) {
+	requestFiller := fp.FillerFactory.CreateRequestFiller(req, m)
+	fakeFiller := fp.FillerFactory.CreateFakeFiller()
+	streamFiller := fp.FillerFactory.CreateStreamFiller()
+	holders := fp.walkAndGetCallback(m.Callback)
+	
+	vars := requestFiller.Fill(holders)
+	log.Println(vars)
+
+	fp.mergeVars(vars, fakeFiller.Fill(holders))
+	fp.mergeVars(vars, streamFiller.Fill(holders))
+	fp.walkAndFillCallback(m, vars)
+}
+
 func (fp ResponseMessageEvaluator) walkAndGet(res mock.Response) []string {
 
 	vars := []string{}
@@ -50,6 +66,13 @@ func (fp ResponseMessageEvaluator) walkAndGet(res mock.Response) []string {
 	return vars
 }
 
+func (fp ResponseMessageEvaluator) walkAndGetCallback(cb mock.Callback) []string {
+	vars := []string{}
+	fp.extractVars(cb.Body, &vars)
+
+	return vars
+}
+
 func (fp ResponseMessageEvaluator) walkAndFill(m *mock.Definition, vars map[string][]string) {
 	res := &m.Response
 	for header, values := range res.Headers {
@@ -63,6 +86,11 @@ func (fp ResponseMessageEvaluator) walkAndFill(m *mock.Definition, vars map[stri
 	}
 
 	res.Body = fp.replaceVars(res.Body, vars)
+}
+
+func (fp ResponseMessageEvaluator) walkAndFillCallback(m *mock.Definition, vars map[string][]string) {
+	cb := &m.Callback
+	cb.Body = fp.replaceVars(cb.Body, vars)
 }
 
 func (fp ResponseMessageEvaluator) replaceVars(input string, vars map[string][]string) string {

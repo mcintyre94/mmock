@@ -34,6 +34,14 @@ type Response struct {
 	Body string `json:"body"`
 }
 
+type Callback struct {
+	Delay       int    `json:"delay"`
+	Url         string `json:"url"`
+	ContentType string `json:"contentType"`
+	HttpHeaders
+	Body string `json:"body"`
+}
+
 type Scenario struct {
 	Name          string   `json:"name"`
 	RequiredState []string `json:"requiredState"`
@@ -86,5 +94,6 @@ type Definition struct {
 	Description string   `json:"description"`
 	Request     Request  `json:"request"`
 	Response    Response `json:"response"`
+	Callback    Callback `json:"callback"`
 	Control     Control  `json:"control"`
 }

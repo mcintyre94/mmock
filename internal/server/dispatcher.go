@@ -68,6 +68,23 @@ func (di Dispatcher) callWebHook(url string, match *match.Transaction) {
 	log.Printf("WebHook response: %d\n", resp.StatusCode)
 }
 
+func (di *Dispatcher) HandleCallback(mRequest *mock.Request, mock *mock.Definition) {
+	log.Println("Got a callback...")
+
+	url := mock.Callback.Url
+	contentType := mock.Callback.ContentType
+
+	di.Evaluator.EvalCallback(mRequest, mock)
+
+	time.Sleep(time.Duration(mock.Callback.Delay) * time.Millisecond)
+
+	log.Printf("Making callback to %s\n", url)
+	_, err := http.Post(url, contentType, bytes.NewBufferString(mock.Callback.Body))
+	if err != nil {
+		log.Printf("Error from callback: %s\n", err)
+	}
+}
+
 //ServerHTTP is the mock http server request handler.
 //It uses the router to decide the matching mock and translator as adapter between the HTTP impelementation and the mock mock.
 func (di *Dispatcher) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -96,6 +113,10 @@ func (di *Dispatcher) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	//translate request
 	di.Translator.WriteHTTPResponseFromDefinition(transaction.Response, w)
+
+	if mock.Callback.Url != "" {
+		go di.HandleCallback(&mRequest, mock)
+	}
 
 	go di.recordMatchData(*transaction)
 }
@@ -139,6 +160,8 @@ func (di *Dispatcher) getMatchingResult(request *mock.Request) (*mock.Definition
 		} else {
 
 			di.Evaluator.Eval(request, mock)
+			log.Println("CM***")
+			log.Println(mock.Response.Body)
 			if mock.Control.Crazy {
 				log.Println("Running crazy mode")
 				mock.Response.StatusCode = di.randomStatusCode(mock.Response.StatusCode)
